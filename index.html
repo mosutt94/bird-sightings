@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bird Sightings</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <button class="btn-auth" id="btnAuth" title="Sign in">Sign in</button>
+      <h1><span>🪶</span> Bird Sightings</h1>
+      <p>Search for bird species spotted near your location</p>
+    </header>
+
+    <div class="search-row">
+      <div class="search-wrapper">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search for a bird..." autocomplete="off" />
+        <div class="spinner" id="spinner"></div>
+        <div class="dropdown" id="dropdown"></div>
+      </div>
+      <button class="btn-favorites" id="btnFavorites" title="Show your saved favorites">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span class="btn-favorites-label">Favorites</span>
+        <span class="fav-count" id="favCount" style="display:none;"></span>
+      </button>
+    </div>
+
+    <div id="favoritesSection" class="favorites-section" style="display:none;">
+      <div class="favorites-header">
+        <h2>Favorites</h2>
+      </div>
+      <div id="favoritesList"></div>
+    </div>
+
+    <div class="location-bar">
+      <span class="location-status" id="locationStatus">No location set</span>
+      <select class="back-days-select" id="backDays" title="How far back to search">
+        <option value="1">Last 1 day</option>
+        <option value="3">Last 3 days</option>
+        <option value="7">Last 7 days</option>
+        <option value="14">Last 14 days</option>
+        <option value="30" selected>Last 30 days</option>
+      </select>
+      <button class="btn-location" id="btnLocation" title="Use your current location">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/><circle cx="12" cy="12" r="8"/></svg>
+        Use my location
+      </button>
+    </div>
+
+    <div class="address-toggle-row">
+      <button class="btn-set-address" id="btnToggleAddress">Set address manually</button>
+    </div>
+    <div class="address-bar" id="addressBar" style="display:none;">
+      <div class="address-wrapper">
+        <input type="text" class="address-input" id="addressInput" placeholder="Enter an address, city, or place..." autocomplete="off" />
+        <div class="dropdown address-dropdown" id="addressDropdown"></div>
+      </div>
+      <button class="btn-address" id="btnAddress">Set location</button>
+    </div>
+
+    <div id="hotspotsSection" class="hotspots-section" style="display:none;">
+      <div class="hotspots-header">
+        <h2>Nearby Hotspots</h2>
+        <span class="count" id="hotspotCount"></span>
+      </div>
+      <div id="hotspotsList"></div>
+    </div>
+
+    <div class="view-toggle" id="viewToggle" style="display:none;">
+      <button class="view-btn active" data-view="list">List</button>
+      <button class="view-btn" data-view="map">Map</button>
+    </div>
+
+    <div id="results"></div>
+
+    <div id="mapContainer" class="map-container" style="display:none;">
+      <div id="map" class="map"></div>
+      <div id="mapBirdInfoPanel" class="bird-info-panel"></div>
+      <div class="map-controls">
+        <span class="map-count" id="mapCount"></span>
+        <button class="btn-bird-info" id="btnBirdInfoMap" style="display:none;">Show info</button>
+        <select id="mapLimit" class="map-limit-select">
+          <option value="20">Show 20 closest</option>
+          <option value="50">Show 50</option>
+          <option value="100">Show 100</option>
+          <option value="0">Show all</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="empty-state" id="emptyState">
+      <div class="icon">🔍</div>
+      <p>Start typing a bird name to see recent sightings near your location</p>
+    </div>
+  </div>
+
+  <footer>
+    Data from <a href="https://ebird.org" target="_blank" rel="noopener">eBird</a> &middot; Cornell Lab of Ornithology
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/location.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/hotspots.js"></script>
+  <script src="js/favorites.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
