@@ -8,13 +8,15 @@ NJ Bird Sightings — a zero-dependency web frontend that lets users search for 
 
 ## How to Run
 
-Use Netlify CLI to serve static files and the proxy function together:
+Local dev uses `dev-server.py` — a ~80-line Python stdlib server that serves static files and proxies `/.netlify/functions/ebird` to the real eBird API so local matches prod.
 
 ```
-netlify dev
+python3 dev-server.py
 ```
 
-This runs on localhost (default port 8888) and pulls `EBIRD_API_KEY` from the linked Netlify site's env vars. A plain static server (e.g. `python3 -m http.server`) will break because it can't run the proxy function.
+Then open `http://localhost:8000`. The script reads `EBIRD_API_KEY` from a gitignored `.env.local` file (copy `.env.local.example` → `.env.local` and paste the key from Netlify's env vars).
+
+Production deploys go to Netlify, where `netlify/functions/ebird.js` handles the proxy using `EBIRD_API_KEY` set in the Netlify dashboard.
 
 ## Architecture
 
