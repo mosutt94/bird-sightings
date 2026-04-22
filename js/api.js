@@ -1,15 +1,20 @@
-const API_KEY = 'lo5oml2c4gb0';
 let BACK_DAYS = 30;
 const SEARCH_RADIUS = 50; // km radius for sightings search
 
 let taxonomy = [];
 
+async function ebirdProxy(path, params = {}) {
+  const qs = new URLSearchParams({ path, ...params }).toString();
+  const res = await fetch(`/.netlify/functions/ebird?${qs}`);
+  if (!res.ok) throw new Error(`eBird proxy failed: ${res.status}`);
+  return res.json();
+}
+
 async function loadTaxonomy() {
   try {
-    const res = await fetch('https://api.ebird.org/v2/ref/taxonomy/ebird?fmt=json&cat=species&locale=en', {
-      headers: { 'X-eBirdApiToken': API_KEY }
+    const data = await ebirdProxy('ref/taxonomy/ebird', {
+      fmt: 'json', cat: 'species', locale: 'en'
     });
-    const data = await res.json();
     taxonomy = data.map(s => ({
       code: s.speciesCode,
       common: s.comName,
@@ -37,12 +42,10 @@ function filterSpecies(query) {
 }
 
 async function fetchSightingsData(speciesCode) {
-  let url;
   if (userLat != null && userLng != null) {
-    url = `https://api.ebird.org/v2/data/obs/geo/recent/${speciesCode}?lat=${userLat}&lng=${userLng}&dist=${SEARCH_RADIUS}&back=${BACK_DAYS}`;
-  } else {
-    url = `https://api.ebird.org/v2/data/obs/US-NJ/recent/${speciesCode}?back=${BACK_DAYS}`;
+    return ebirdProxy(`data/obs/geo/recent/${speciesCode}`, {
+      lat: userLat, lng: userLng, dist: SEARCH_RADIUS, back: BACK_DAYS
+    });
   }
-  const res = await fetch(url, { headers: { 'X-eBirdApiToken': API_KEY } });
-  return res.json();
+  return ebirdProxy(`data/obs/US-NJ/recent/${speciesCode}`, { back: BACK_DAYS });
 }

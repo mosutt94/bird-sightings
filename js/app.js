@@ -59,10 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateMapLimit(parseInt(e.target.value, 10));
   });
 
-  if (API_KEY) {
-    loadTaxonomy();
-    requestLocation();
-  } else {
-    console.warn('Set your eBird API key in the API_KEY variable.');
-  }
+  loadTaxonomy();
+  requestLocation();
 });

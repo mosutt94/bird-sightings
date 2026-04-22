@@ -7,12 +7,7 @@ let hotspotVisibleCount = 10;
 async function fetchNearbyHotspots(lat, lng, dist) {
   dist = dist || 25;
   try {
-    const res = await fetch(
-      `https://api.ebird.org/v2/ref/hotspot/geo?lat=${lat}&lng=${lng}&dist=${dist}&fmt=json`,
-      { headers: { 'X-eBirdApiToken': API_KEY } }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
+    const data = await ebirdProxy('ref/hotspot/geo', { lat, lng, dist, fmt: 'json' });
     data.forEach(h => {
       h._dist = distanceMiles(lat, lng, h.lat, h.lng);
     });
@@ -28,12 +23,7 @@ async function fetchNearbyHotspots(lat, lng, dist) {
 async function fetchHotspotObservations(locId) {
   if (hotspotDetailCache[locId]) return hotspotDetailCache[locId];
   try {
-    const res = await fetch(
-      `https://api.ebird.org/v2/data/obs/${locId}/recent?back=${BACK_DAYS}`,
-      { headers: { 'X-eBirdApiToken': API_KEY } }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
+    const data = await ebirdProxy(`data/obs/${locId}/recent`, { back: BACK_DAYS });
     hotspotDetailCache[locId] = data;
     return data;
   } catch (e) {
