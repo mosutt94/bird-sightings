@@ -51,7 +51,6 @@ function initSearch() {
         document.getElementById('dropdown').classList.remove('open');
         document.getElementById('results').innerHTML = '';
         document.getElementById('viewToggle').style.display = 'none';
-        document.getElementById('emptyState').style.display = '';
         lastSightingsData = null;
         lastSpeciesName = null;
         showHotspots();

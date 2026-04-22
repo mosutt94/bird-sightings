@@ -301,13 +301,11 @@ function renderList(data, commonName) {
 
 async function fetchSightings(speciesCode, commonName) {
   const dropdown = document.getElementById('dropdown');
-  const emptyState = document.getElementById('emptyState');
   const spinner = document.getElementById('spinner');
   const results = document.getElementById('results');
   const viewToggle = document.getElementById('viewToggle');
 
   dropdown.classList.remove('open');
-  emptyState.style.display = 'none';
   if (typeof hideHotspots === 'function') hideHotspots();
   spinner.classList.add('active');
   results.innerHTML = '';
