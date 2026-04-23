@@ -1,9 +1,18 @@
-let hotspotData = [];
-let hotspotDetailCache = {};
-let hotspotsVisible = false;
-let hotspotLimit = 10;
-let hotspotVisibleCount = 10;
+// hotspots.js — "Nearby hotspots" initial view + each hotspot's recent
+// observations drawer.
+//
+// A hotspot is eBird's term for a named birdwatching location (park,
+// preserve, etc.). We show these when the user has a location but hasn't
+// searched for a specific bird yet — gives the app something useful on
+// first load.
 
+let hotspotData = [];          // the current list of nearby hotspots
+let hotspotDetailCache = {};   // { locId -> array of recent observations }
+let hotspotsVisible = false;   // true when the hotspots section is open
+let hotspotLimit = 10;         // batch size for "Show more"
+let hotspotVisibleCount = 10;  // how many are currently rendered
+
+// eBird: geographic hotspot list. dist is km; we default to 25.
 async function fetchNearbyHotspots(lat, lng, dist) {
   dist = dist || 25;
   try {
@@ -20,6 +29,8 @@ async function fetchNearbyHotspots(lat, lng, dist) {
   }
 }
 
+// Loaded on demand when a hotspot card is expanded. Cached per-session
+// because we expect users to toggle the same drawers multiple times.
 async function fetchHotspotObservations(locId) {
   if (hotspotDetailCache[locId]) return hotspotDetailCache[locId];
   try {
@@ -153,6 +164,9 @@ async function toggleHotspotDetail(locId) {
   detail.innerHTML = `<div class="hotspot-detail-header">Recent observations (${obs.length})</div>${rows}`;
 }
 
+// Called from setUserLocation() whenever the user's location changes.
+// If a species is currently selected, we skip — species results take
+// priority over the hotspot view.
 async function showHotspots() {
   if (lastSpeciesName) return; // Don't show if species results are active
   const section = document.getElementById('hotspotsSection');

@@ -1,3 +1,16 @@
+// netlify/functions/ebird.js — Serverless proxy to the eBird API.
+//
+// Why this exists: the eBird API key must be sent on every request. If it
+// lived in browser JS, anyone could scrape it from DevTools. Instead, the
+// browser calls /.netlify/functions/ebird, and this function (running on
+// Netlify's servers) attaches the X-eBirdApiToken header using
+// EBIRD_API_KEY from the site's environment variables — never leaving
+// the server.
+//
+// Call shape: /.netlify/functions/ebird?path=<eBird path>&<other params>
+// The `path` query param is stripped and appended to the eBird base URL;
+// everything else is forwarded as eBird query params.
+
 exports.handler = async (event) => {
   const apiKey = process.env.EBIRD_API_KEY;
   if (!apiKey) {

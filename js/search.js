@@ -1,5 +1,14 @@
-let activeIndex = -1;
-let debounceTimer = null;
+// search.js — The bird-name search input + its dropdown.
+//
+// This file does not talk to the network directly. It calls filterSpecies()
+// from api.js (which reads the cached taxonomy) and fetchSightings() from
+// render.js when the user picks a result.
+//
+// Keyboard: ArrowUp/Down navigates the dropdown, Enter selects, Escape closes.
+// Mouse:   click anywhere outside the search wrapper to close the dropdown.
+
+let activeIndex = -1;   // which dropdown item is highlighted (arrow-key state)
+let debounceTimer = null; // cleared/reset on every keystroke
 
 function highlightMatch(text, query) {
   const idx = text.toLowerCase().indexOf(query.toLowerCase());
@@ -43,10 +52,15 @@ function initSearch() {
   const input = document.getElementById('searchInput');
   const dropdown = document.getElementById('dropdown');
 
+  // Debounce pattern: every keystroke cancels the previous pending callback
+  // and schedules a new one 150ms later. Without this we'd filter the full
+  // 10k-species list on every single key — wasteful and janky on slower
+  // devices.
   input.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       const q = input.value.trim();
+      // Empty query: go back to the "nearby hotspots" initial view.
       if (!q && typeof showHotspots === 'function' && userLat != null) {
         document.getElementById('dropdown').classList.remove('open');
         document.getElementById('results').innerHTML = '';

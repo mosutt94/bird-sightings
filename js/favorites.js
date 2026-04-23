@@ -1,6 +1,16 @@
+// favorites.js — Cross-device favorites, backed by:
+//   - localStorage when the user is signed out (FAVORITES_KEY)
+//   - Firestore   when signed in   (users/{uid} document, `favorites` field)
+//
+// Key idea: there's a single in-memory `favoritesCache` array that's always
+// the source of truth for UI reads (isFavorite, getFavorites). Writes go to
+// cache immediately for snappy UI, then persist to whichever backend is
+// active. When the user signs in, local and cloud favorites are merged so
+// nothing is lost.
+
 const FAVORITES_KEY = 'birdapp_favorites';
 
-let favoritesCache = loadLocalFavorites();
+let favoritesCache = loadLocalFavorites(); // populated immediately at startup
 
 function loadLocalFavorites() {
   try {
@@ -12,6 +22,9 @@ function saveLocalFavorites(favs) {
   localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
 }
 
+// One Firestore doc per user. The Firestore security rules (set in the
+// Firebase console) enforce that only the signed-in user can read/write
+// their own doc.
 function userDocRef() {
   return db.collection('users').doc(currentUser.uid);
 }
@@ -22,15 +35,22 @@ async function fetchCloudFavorites() {
 }
 
 async function writeCloudFavorites(favs) {
+  // merge: true so we don't clobber other fields we might add later.
   await userDocRef().set({ favorites: favs }, { merge: true });
 }
 
+// Union by species code (no duplicates). Used on sign-in to combine
+// whatever the user had locally with whatever's already in the cloud.
 function mergeFavorites(a, b) {
   const map = new Map();
   [...a, ...b].forEach(f => map.set(f.code, f));
   return Array.from(map.values());
 }
 
+// Reacts to every auth state change (sign-in, sign-out, token refresh).
+// - Signed in: fetch cloud favorites, merge with local, push merged set
+//   back to cloud. Cache now reflects Firestore.
+// - Signed out: fall back to whatever's in localStorage.
 onAuthChange(async (user) => {
   if (user) {
     try {
@@ -61,6 +81,9 @@ function isFavorite(speciesCode) {
   return favoritesCache.some(f => f.code === speciesCode);
 }
 
+// Optimistic update: mutate the in-memory cache and refresh the UI first,
+// then persist in the background. If the cloud write fails we fall back
+// to localStorage so the change isn't lost entirely.
 async function toggleFavorite(speciesCode, commonName) {
   const idx = favoritesCache.findIndex(f => f.code === speciesCode);
   if (idx >= 0) {

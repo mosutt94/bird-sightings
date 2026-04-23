@@ -1,6 +1,12 @@
-let map = null;
-let markerLayer = null;
-let currentMapLimit = 20;
+// map.js — Leaflet map view for sightings and hotspots.
+//
+// Leaflet is loaded via CDN in index.html; the `L` global comes from there.
+// `map` is created lazily (only when the user switches to map view) because
+// Leaflet misbehaves when initialized inside a hidden container.
+
+let map = null;          // Leaflet map instance (created once, reused)
+let markerLayer = null;  // layer group we clear + repopulate between renders
+let currentMapLimit = 20; // how many sightings to show — 0 means "all"
 
 function initMap() {
   if (map) return;
@@ -13,9 +19,12 @@ function initMap() {
   markerLayer = L.layerGroup().addTo(map);
 }
 
+// Render a species' sightings on the map: one marker per sighting, plus
+// an extra blue dot for the user's location. fitBounds() auto-zooms to
+// include all of them.
 function renderMap(sightings, speciesName) {
   if (!map) initMap();
-  markerLayer.clearLayers();
+  markerLayer.clearLayers(); // wipe any previous species' markers
 
   const sorted = [...sightings];
   if (userLat != null && userLng != null) {

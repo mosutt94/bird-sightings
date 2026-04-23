@@ -1,6 +1,15 @@
+// location.js — Everything related to the user's location.
+//
+// - Manages userLat/userLng (read by api.js, render.js, hotspots.js, map.js)
+// - Converts coordinates <-> human-readable addresses via OpenStreetMap's
+//   Nominatim API (free, but rate-limited — we cache results in localStorage)
+// - Provides browser geolocation and manual address geocoding
+
 let userLat = null;
 let userLng = null;
 
+// Haversine formula: great-circle distance between two lat/lng points on Earth.
+// R = Earth's radius in miles. Used to sort sightings by proximity.
 function distanceMiles(lat1, lng1, lat2, lng2) {
   const toRad = d => d * Math.PI / 180;
   const R = 3958.8;
@@ -10,6 +19,11 @@ function distanceMiles(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+// ---------- Reverse-geocode cache ----------
+// Nominatim is free but aggressively rate-limited. We cache lat/lng → label
+// in localStorage so repeat visits don't re-hit the API. Keys are rounded
+// to 3 decimals (~110m precision) so near-identical GPS readings reuse the
+// same entry.
 const GEOCACHE_KEY = 'birdapp_geocache';
 
 function loadGeocache() {
@@ -27,6 +41,11 @@ function getCachedGeocode(lat, lng) {
   return loadGeocache()[`${lat.toFixed(3)},${lng.toFixed(3)}`];
 }
 
+// Central setter for the user's location. Called from:
+//   - requestLocation() — browser geolocation
+//   - geocodeAddress() / address-dropdown click — manual address
+// Updates the module-level lat/lng, shows a human-readable label in the
+// location bar, and kicks off the nearby-hotspots fetch.
 async function setUserLocation(lat, lng, displayName) {
   userLat = lat;
   userLng = lng;
@@ -68,6 +87,9 @@ async function setUserLocation(lat, lng, displayName) {
   if (typeof showHotspots === 'function') showHotspots();
 }
 
+// ---------- Manual address search (Nominatim forward-geocoding) ----------
+// Typing in the "Set address" input calls searchAddresses() with a debounce.
+// Picking a result or clicking the button calls geocodeAddress() to commit.
 let addressDebounce = null;
 
 async function searchAddresses(query) {
@@ -167,6 +189,10 @@ async function geocodeAddress(query) {
   }
 }
 
+// ---------- Browser geolocation ----------
+// Uses the Web Geolocation API, which triggers the native permission prompt
+// the first time. Requires an HTTPS origin (localhost counts) — won't work
+// from file://, which is why CLAUDE.md says to use the dev server.
 function requestLocation() {
   const statusEl = document.getElementById('locationStatus');
   const btn = document.getElementById('btnLocation');

@@ -1,3 +1,11 @@
+// app.js — Entry point. Runs once when the DOM is ready.
+// Responsibilities:
+//   - Wire every button/input to its handler
+//   - Kick off the two startup fetches (taxonomy + location)
+//
+// Everything else is defined in the other js/ files and attached to the
+// global scope because we're not using ES modules (see CLAUDE.md).
+
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnLocation').addEventListener('click', requestLocation);
 

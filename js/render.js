@@ -1,11 +1,31 @@
-let lastSightingsData = null;
-let lastSpeciesName = null;
-let currentView = 'list';
-let listLimit = 20;
-let visibleCount = 20;
-const wikiCache = {};
-const addressCache = {};
+// render.js — Builds the sightings UI when a bird is selected.
+//
+// Responsibilities:
+//   - fetchSightings()       — orchestrates one eBird call + sorting + render
+//   - renderList()           — builds the card list HTML
+//   - toggleBirdInfo()       — loads a Wikipedia blurb
+//   - toggleSightingDetail() — expands a card to show other birds at that spot
+//   - reverseGeocode() / loadAddresses() — fills in street addresses per card
+//     (lazy: only addresses of currently visible cards, to stay under Nominatim's
+//     rate limit)
+//
+// Cross-file deps:
+//   - reads userLat/userLng + distanceMiles() from location.js
+//   - reads/calls favorites.js (getSpeciesCode, isFavorite, toggleFavorite)
+//   - reads taxonomy from api.js
+//   - triggers setView/renderMap in map.js when the user flips to map view
 
+let lastSightingsData = null;   // raw sightings array for the current species
+let lastSpeciesName = null;     // current species common name, or null if none
+let currentView = 'list';       // 'list' or 'map' — toggled by the view buttons
+let listLimit = 20;             // batch size when "Show more" is clicked
+let visibleCount = 20;          // how many cards are currently rendered
+const wikiCache = {};           // { commonName -> Wikipedia response }
+const addressCache = {};        // { "lat,lng" -> reverse-geocoded address }
+
+// ---------- Address lookups for sighting cards ----------
+// reverseGeocode caches its own results so repeated lat/lngs across the
+// dataset (many sightings at the same park) only hit Nominatim once.
 async function reverseGeocode(lat, lng) {
   const key = `${lat},${lng}`;
   if (addressCache[key]) return addressCache[key];
@@ -33,6 +53,10 @@ async function loadAddresses(observations) {
   }
 }
 
+// ---------- View switching (list <-> map) ----------
+// Called when the user clicks the List/Map toggle. Map view is lazily
+// initialized the first time it's shown, then invalidateSize() is called
+// because Leaflet maps that are created while hidden need a size refresh.
 function setView(view) {
   currentView = view;
   const resultsEl = document.getElementById('results');
@@ -69,6 +93,10 @@ function setView(view) {
   }
 }
 
+// ---------- Wikipedia "Learn more about this bird" panel ----------
+// Tries a couple of query variants because Wikipedia titles can be
+// ambiguous (e.g. "Cardinal" is a disambiguation page — falls back to
+// the scientific name as a last resort).
 async function fetchBirdInfo(name) {
   // Try the common name first
   const queries = [name, name + ' (bird)'];
@@ -189,6 +217,11 @@ async function toggleSightingDetail(locId) {
   detail.innerHTML = `<div class="hotspot-detail-header">Recent observations at this location (${obs.length})</div>${rows}`;
 }
 
+// ---------- HTML rendering ----------
+// We build the full sightings UI as a string of HTML and assign to
+// innerHTML. This is simpler than DOM manipulation for one-shot views.
+// Event listeners are re-attached after each render (delegated where
+// practical, directly where it's cleaner).
 function renderList(data, commonName) {
   const results = document.getElementById('results');
   const sortLabel = userLat != null ? ' \u00b7 sorted by distance' : '';
@@ -299,6 +332,10 @@ function renderList(data, commonName) {
   }
 }
 
+// ---------- Main entry: fetch + sort + render ----------
+// Called from search.js (user picks a dropdown item) and favorites.js
+// (user clicks a favorite). The spinner is shown while the fetch runs.
+// If the user has coordinates, sightings are sorted nearest-first.
 async function fetchSightings(speciesCode, commonName) {
   const dropdown = document.getElementById('dropdown');
   const spinner = document.getElementById('spinner');

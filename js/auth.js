@@ -1,3 +1,15 @@
+// auth.js — Firebase initialization + Google sign-in.
+//
+// Firebase "client config" values are safe to commit: they identify the
+// project, not a secret. Real access control lives in Firestore security
+// rules + the list of authorized domains in the Firebase console.
+//
+// Globals exposed to other files:
+//   currentUser     — the signed-in user or null. Read-only elsewhere.
+//   db              — Firestore handle, used by favorites.js
+//   onAuthChange(fn) — subscribe to sign-in/out events
+//   signIn(), signOutUser() — wired up by the header button in app.js
+
 const firebaseConfig = {
   apiKey: "AIzaSyAhdXUqK8QF9RTY6kU__9jy6OfZ64IbIfg",
   authDomain: "bird-sightings-app.firebaseapp.com",
@@ -13,13 +25,19 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 let currentUser = null;
-const authListeners = [];
+const authListeners = []; // functions to call whenever the user signs in/out
 
+// Simple observer pattern. Other files (favorites.js) register a callback
+// once, and get notified every time the auth state changes. We also invoke
+// the callback immediately so it runs with the current state.
 function onAuthChange(fn) {
   authListeners.push(fn);
   fn(currentUser);
 }
 
+// Firebase emits auth changes: on page load (restoring a prior session),
+// after sign-in, after sign-out, after token expiry, etc. We funnel them
+// into `currentUser` and fan out to any listeners.
 auth.onAuthStateChanged((user) => {
   currentUser = user;
   updateAuthUI();
@@ -28,6 +46,8 @@ auth.onAuthStateChanged((user) => {
 
 function signIn() {
   const provider = new firebase.auth.GoogleAuthProvider();
+  // signInWithPopup opens a Google account picker. On success the popup
+  // closes and onAuthStateChanged fires above.
   return auth.signInWithPopup(provider).catch(err => {
     console.error('Sign-in failed:', err);
     alert('Sign-in failed: ' + (err.message || err.code));
