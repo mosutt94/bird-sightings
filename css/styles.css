@@ -369,6 +369,17 @@ header p {
   color: var(--text-muted);
 }
 
+.results-explainer {
+  margin: -8px 0 16px;
+  padding: 10px 14px;
+  background: var(--accent-light);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.45;
+}
+
 .btn-bird-info {
   flex-shrink: 0;
   min-width: 80px;

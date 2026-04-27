@@ -53,7 +53,7 @@ function renderMap(sightings, speciesName) {
     const time = obs.obsDt.includes(' ')
       ? new Date(obs.obsDt.replace(' ', 'T')).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
       : '';
-    const count = obs.howMany != null ? obs.howMany : '?';
+    const countLabel = obs.howMany != null ? `${obs.howMany} counted` : 'Present (not counted)';
     const distText = obs._dist != null
       ? `<br><strong>${obs._dist < 1 ? obs._dist.toFixed(1) : Math.round(obs._dist)} mi</strong> away`
       : '';
@@ -63,8 +63,8 @@ function renderMap(sightings, speciesName) {
         <div style="font-weight:700;font-size:0.95rem;color:#3a6b4c;margin-bottom:4px;">${speciesName}</div>
         <div style="font-weight:600;font-size:0.88rem;margin-bottom:6px;">${obs.locName}</div>
         <div style="font-size:0.82rem;color:#6b6b6b;">
-          ${date}${time ? ' &middot; ' + time : ''}<br>
-          ${count} ${count === 1 ? 'bird' : 'birds'}
+          Reported ${date}${time ? ' at ' + time : ''}<br>
+          ${countLabel}
           ${obs.locPrivate ? ' &middot; Private location' : ''}
           ${distText}
         </div>

@@ -196,12 +196,16 @@ async function toggleSightingDetail(locId) {
   detail.innerHTML = '<div class="hotspot-detail-loading">Loading recent observations...</div>';
 
   const obs = await fetchHotspotObservations(locId);
-  if (!obs.length) {
-    detail.innerHTML = '<div class="hotspot-detail-empty">No recent observations at this location.</div>';
+  // Filter out the species the user is currently viewing — the drawer
+  // is meant to surface the *other* birds at this spot, not repeat the
+  // one already shown in the card above.
+  const others = lastSpeciesName ? obs.filter(o => o.comName !== lastSpeciesName) : obs;
+  if (!others.length) {
+    detail.innerHTML = '<div class="hotspot-detail-empty">No other species reported at this location recently.</div>';
     return;
   }
 
-  const rows = obs.map(o => {
+  const rows = others.map(o => {
     const count = o.howMany != null ? o.howMany : '?';
     const date = new Date(o.obsDt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     return `
@@ -214,7 +218,7 @@ async function toggleSightingDetail(locId) {
       </div>`;
   }).join('');
 
-  detail.innerHTML = `<div class="hotspot-detail-header">Recent observations at this location (${obs.length})</div>${rows}`;
+  detail.innerHTML = `<div class="hotspot-detail-header">Other species seen at this location recently (${others.length})</div>${rows}`;
 }
 
 // ---------- HTML rendering ----------
@@ -254,7 +258,8 @@ function renderList(data, commonName) {
       <button class="btn-bird-info" id="btnBirdInfo">${infoBtnText}</button>
       <span class="count">${showing}${sortLabel}</span>
       <select class="list-limit-select" id="listLimit">${limitOptions}</select>
-    </div>`;
+    </div>
+    <p class="results-explainer">Each card is the most recent checklist that reported this bird at that location in the last 30 days. The count shows how many of this species the observer logged on that visit.</p>`;
 
   const cards = visible.map(obs => {
     const date = new Date(obs.obsDt).toLocaleDateString('en-US', {
@@ -263,7 +268,9 @@ function renderList(data, commonName) {
     const time = obs.obsDt.includes(' ')
       ? new Date(obs.obsDt.replace(' ', 'T')).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
       : '';
-    const count = obs.howMany != null ? obs.howMany : '?';
+    // eBird returns howMany: null when an observer marked the species "present"
+    // without a count (very common for casual sightings of common species).
+    const countLabel = obs.howMany != null ? `${obs.howMany} counted` : 'Present (not counted)';
     const distHtml = obs._dist != null
       ? `<span><span class="distance-badge">${obs._dist < 1 ? obs._dist.toFixed(1) : Math.round(obs._dist)} mi</span></span>`
       : '';
@@ -275,8 +282,8 @@ function renderList(data, commonName) {
         <div class="sighting-location">${obs.locName}</div>
         <div class="sighting-address" id="addr-${obs.lat}-${obs.lng}">${cachedAddr}</div>
         <div class="sighting-meta">
-          <span>\ud83d\udcc5 ${date}${time ? ' \u00b7 ' + time : ''}</span>
-          <span><span class="badge">${count} ${count === 1 ? 'bird' : 'birds'}</span></span>
+          <span>\ud83d\udcc5 Reported ${date}${time ? ' at ' + time : ''}</span>
+          <span><span class="badge">${countLabel}</span></span>
           ${distHtml}
           ${obs.locPrivate ? '<span>\ud83d\udccd Private</span>' : ''}
         </div>
